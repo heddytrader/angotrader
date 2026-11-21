@@ -3,8 +3,6 @@ import os
 
 app = Flask(__name__)
 app.secret_key = "angotrader-secreto-123"
-
-# Base de dados simples na memória
 users = {}
 
 HTML = """
@@ -17,16 +15,17 @@ HTML = """
 <style>
   *{margin:0;padding:0;box-sizing:border-box;font-family:Arial,sans-serif}
   body{background:#0a0a0a;color:white;min-height:100vh}
-  .top{padding:15px 20px;display:flex;justify-content:space-between;align-items:center}
-  .logo{font-weight:900;font-size:22px}
+  .top{padding:12px 12px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+  .logo{font-weight:900;font-size:18px;white-space:nowrap}
   .logo span{color:#FFD700}
-  .btn-yellow{background:#FFD700;color:black;padding:10px 18px;border-radius:25px;font-weight:800;border:none;cursor:pointer;text-decoration:none;font-size:14px}
-  .btn-outline{border:1px solid #333;padding:10px 18px;border-radius:25px;color:white;text-decoration:none;font-size:14px}
-  .hero{padding:30px 20px;text-align:center}
-  .hero h1{font-size:32px;line-height:1.2}
+  .nav{display:flex;gap:6px;align-items:center;flex-shrink:0}
+  .btn-yellow{background:#FFD700;color:black;padding:8px 12px;border-radius:20px;font-weight:800;border:none;cursor:pointer;text-decoration:none;font-size:12px;white-space:nowrap}
+  .btn-outline{border:1px solid #333;padding:8px 12px;border-radius:20px;color:white;text-decoration:none;font-size:12px;white-space:nowrap}
+  .hero{padding:25px 15px;text-align:center}
+  .hero h1{font-size:30px;line-height:1.2}
   .hero h1 span{color:#FFD700}
   .hero p{color:#aaa;margin:15px 0 25px}
-  .card{background:#141414;border:1px solid #222;border-radius:20px;padding:20px;margin:20px;text-align:left}
+  .card{background:#141414;border:1px solid #222;border-radius:20px;padding:20px;margin:15px;text-align:left}
   .price{font-size:28px;font-weight:900}
   .up{color:#00ff88}
   .signal{margin-top:15px;background:#1a1a00;border:1px solid #FFD700;padding:15px;border-radius:15px}
@@ -43,13 +42,13 @@ HTML = """
 <body>
 <div class="top">
   <div class="logo">⚡ ANGO<span>TRADER</span></div>
-  <div>
+  <div class="nav">
     {% if session.get('user') %}
-      <span style="font-size:13px">Olá, {{ session.get('user') }}</span>
-      <a href="/logout" class="btn-outline" style="margin-left:10px">Sair</a>
+      <span style="font-size:12px">Olá, {{ session.get('user') }}</span>
+      <a href="/logout" class="btn-outline">Sair</a>
     {% else %}
       <a href="/login" class="btn-outline">Entrar</a>
-      <a href="/register" class="btn-yellow" style="margin-left:8px">Criar Conta</a>
+      <a href="/register" class="btn-yellow">Criar Conta</a>
     {% endif %}
   </div>
 </div>
@@ -58,7 +57,7 @@ HTML = """
 <div class="hero">
   <h1>Negocia como os grandes.<br><span>Opera como angolano.</span></h1>
   <p>Sinais, gráficos e trading simplificado para Angola.</p>
-  <a href="/register" class="btn-yellow" style="display:inline-block;padding:14px 28px">Criar Conta Grátis →</a>
+  <a href="/register" class="btn-yellow" style="display:inline-block;padding:13px 24px;font-size:14px">Criar Conta Grátis →</a>
 </div>
 <div class="card">
   <div style="display:flex;justify-content:space-between"><b>₿ BTC / USDT</b><span class="up">+2.4% ↗</span></div>
