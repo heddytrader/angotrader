@@ -1,9 +1,25 @@
 from flask import Flask, request, redirect, url_for, session, render_template_string
 import os
+from datetime import datetime, timezone, timedelta
 
 app = Flask(__name__)
 app.secret_key = "angotrader-secreto-123"
 users = {}
+
+# Hora de Luanda = UTC +1
+def hora_luanda():
+    agora = datetime.now(timezone.utc) + timedelta(hours=1)
+    return agora
+
+# Ver se Forex está fechado: Sábado e Domingo até 23h
+def forex_fechado():
+    agora = hora_luanda()
+    dia = agora.weekday() # 5=Sábado, 6=Domingo
+    if dia == 5:
+        return True
+    if dia == 6 and agora.hour < 23:
+        return True
+    return False
 
 HTML = """
 <!DOCTYPE html>
@@ -11,21 +27,20 @@ HTML = """
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AngoTrader - Negocia como os grandes</title>
+<title>AngoTrader</title>
 <style>
   *{margin:0;padding:0;box-sizing:border-box;font-family:Arial,sans-serif}
   body{background:#0a0a0a;color:white;min-height:100vh}
-  .top{padding:12px 12px;display:flex;justify-content:space-between;align-items:center;gap:8px}
-  .logo{font-weight:900;font-size:18px;white-space:nowrap}
+  .top{padding:15px 20px;display:flex;justify-content:space-between;align-items:center}
+  .logo{font-weight:900;font-size:22px}
   .logo span{color:#FFD700}
-  .nav{display:flex;gap:6px;align-items:center;flex-shrink:0}
-  .btn-yellow{background:#FFD700;color:black;padding:8px 12px;border-radius:20px;font-weight:800;border:none;cursor:pointer;text-decoration:none;font-size:12px;white-space:nowrap}
-  .btn-outline{border:1px solid #333;padding:8px 12px;border-radius:20px;color:white;text-decoration:none;font-size:12px;white-space:nowrap}
-  .hero{padding:25px 15px;text-align:center}
-  .hero h1{font-size:30px;line-height:1.2}
+  .btn-yellow{background:#FFD700;color:black;padding:10px 18px;border-radius:25px;font-weight:800;border:none;cursor:pointer;text-decoration:none;font-size:14px}
+  .btn-outline{border:1px solid #333;padding:10px 18px;border-radius:25px;color:white;text-decoration:none;font-size:14px}
+  .hero{padding:30px 20px;text-align:center}
+  .hero h1{font-size:32px;line-height:1.2}
   .hero h1 span{color:#FFD700}
   .hero p{color:#aaa;margin:15px 0 25px}
-  .card{background:#141414;border:1px solid #222;border-radius:20px;padding:20px;margin:15px;text-align:left}
+  .card{background:#141414;border:1px solid #222;border-radius:20px;padding:20px;margin:20px;text-align:left}
   .price{font-size:28px;font-weight:900}
   .up{color:#00ff88}
   .signal{margin-top:15px;background:#1a1a00;border:1px solid #FFD700;padding:15px;border-radius:15px}
@@ -37,18 +52,20 @@ HTML = """
   label{font-size:13px;color:#aaa}
   .full{width:100%;padding:14px;border-radius:25px;background:#FFD700;border:none;font-weight:900;cursor:pointer;font-size:15px}
   a{color:#FFD700}
+  .fechado{background:#ff2222;color:white;padding:10px;border-radius:10px;text-align:center;font-weight:800;margin:10px 20px}
+  .aberto{background:#00aa55;color:white;padding:10px;border-radius:10px;text-align:center;font-weight:800;margin:10px 20px}
 </style>
 </head>
 <body>
 <div class="top">
   <div class="logo">⚡ ANGO<span>TRADER</span></div>
-  <div class="nav">
+  <div>
     {% if session.get('user') %}
-      <span style="font-size:12px">Olá, {{ session.get('user') }}</span>
-      <a href="/logout" class="btn-outline">Sair</a>
+      <span style="font-size:13px">Olá, {{ session.get('user') }}</span>
+      <a href="/logout" class="btn-outline" style="margin-left:10px">Sair</a>
     {% else %}
       <a href="/login" class="btn-outline">Entrar</a>
-      <a href="/register" class="btn-yellow">Criar Conta</a>
+      <a href="/register" class="btn-yellow" style="margin-left:8px">Criar Conta</a>
     {% endif %}
   </div>
 </div>
@@ -57,23 +74,39 @@ HTML = """
 <div class="hero">
   <h1>Negocia como os grandes.<br><span>Opera como angolano.</span></h1>
   <p>Sinais, gráficos e trading simplificado para Angola.</p>
-  <a href="/register" class="btn-yellow" style="display:inline-block;padding:13px 24px;font-size:14px">Criar Conta Grátis →</a>
+  <a href="/register" class="btn-yellow" style="display:inline-block;padding:14px 28px">Criar Conta Grátis →</a>
 </div>
+
+{% if fechado %}
+<div class="fechado">🔴 MERCADO FOREX FECHADO - Abre Domingo 23h00 (Luanda)</div>
+{% else %}
+<div class="aberto">🟢 MERCADO ABERTO</div>
+{% endif %}
+
 <div class="card">
-  <div style="display:flex;justify-content:space-between"><b>₿ BTC / USDT</b><span class="up">+2.4% ↗</span></div>
-  <div class="price" style="margin-top:10px">$97,450</div>
-  <div style="color:#888;font-size:13px;margin-top:5px">Bitcoin • Gráfico ao vivo</div>
-  <div style="background:#222;height:60px;border-radius:10px;margin-top:15px;display:flex;align-items:flex-end;gap:4px;padding:8px">
-    <div style="background:#FFD700;width:100%;height:30%"></div>
-    <div style="background:#FFD700;width:100%;height:45%"></div>
-    <div style="background:#FFD700;width:100%;height:35%"></div>
-    <div style="background:#FFD700;width:100%;height:60%"></div>
-    <div style="background:#FFD700;width:100%;height:80%"></div>
-    <div style="background:#FFD700;width:100%;height:95%"></div>
+  <div style="display:flex;justify-content:space-between"><b>₿ BTC / USDT</b><span class="up">Gráfico Real</span></div>
+  <div style="height:300px;margin-top:15px">
+    <div class="tradingview-widget-container" style="height:100%;width:100%">
+      <div class="tradingview-widget-container__widget" style="height:calc(100% - 32px);width:100%"></div>
+      <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js" async>
+      {
+        "autosize": true,
+        "symbol": "BINANCE:BTCUSDT",
+        "interval": "15",
+        "timezone": "Africa/Luanda",
+        "theme": "dark",
+        "style": "1",
+        "locale": "pt",
+        "hide_top_toolbar": false,
+        "allow_symbol_change": true
+      }
+      </script>
+    </div>
   </div>
   <div class="signal">
     <b>🔥 Sinal de Hoje - EGGY</b><br>
-    <span style="font-size:13px;color:#ccc">COMPRAR BTC • Confiança 87%</span>
+    <span style="font-size:14px;color:#ccc">COMPRAR BTC • Confiança 87%</span><br>
+    <span style="font-size:13px;color:#FFD700">📅 Data: {{ data }}<br>🕒 Hora: {{ hora }} - Luanda</span>
   </div>
 </div>
 {% endif %}
@@ -118,13 +151,8 @@ HTML = """
 <script>
 function verSenha(id, btn){
   var campo = document.getElementById(id);
-  if(campo.type === "password"){
-    campo.type = "text";
-    btn.textContent = "🙈";
-  } else {
-    campo.type = "password";
-    btn.textContent = "👁️";
-  }
+  if(campo.type === "password"){ campo.type = "text"; btn.textContent = "🙈"; }
+  else { campo.type = "password"; btn.textContent = "👁️"; }
 }
 </script>
 </body>
@@ -133,7 +161,10 @@ function verSenha(id, btn){
 
 @app.route("/")
 def home():
-    return render_template_string(HTML, page="home")
+    agora = hora_luanda()
+    data = agora.strftime("%d/%m/%Y")
+    hora = agora.strftime("%H:%M")
+    return render_template_string(HTML, page="home", fechado=forex_fechado(), data=data, hora=hora)
 
 @app.route("/register", methods=["GET","POST"])
 def register():
