@@ -1,12 +1,13 @@
+
 from flask import Flask, render_template_string
 import os
 from datetime import datetime
-import pytz
+from zoneinfo import ZoneInfo
 
 app = Flask(__name__)
 
-# Timezone Luanda
-TZ = pytz.timezone("Africa/Luanda")
+# Timezone Luanda sem pytz
+TZ = ZoneInfo("Africa/Luanda")
 
 HTML = """
 <!DOCTYPE html>
@@ -28,7 +29,6 @@ small{color:#94a3b8}
 <body>
 <h1>👑 AngoTrader</h1>
 <p>Data: {{ data }} | Hora Luanda: {{ hora }}</p>
-
 <div class="card">
 <h2>EUR/USD</h2>
 <div class="price">{{ preco }}</div>
@@ -51,7 +51,6 @@ def home():
     agora = datetime.now(TZ)
     data = agora.strftime("%d/%m/%Y")
     hora = agora.strftime("%H:%M:%S")
-    # Mercado fechado sabado e domingo
     fechado = agora.weekday() >= 5
     preco = "1.0845"
     status = "MERCADO FECHADO - Fim de semana" if fechado else "Ao vivo"
